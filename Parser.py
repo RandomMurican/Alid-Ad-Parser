@@ -16,19 +16,21 @@ class Item:
         return self.name + ' @ ' + self.price
 
 
-# Open the browser and go to Aldi
+# Open the browser and go to Aldi's website
 browser = webdriver.Chrome()
 browser.get('https://www.aldi.us/en/weekly-specials/our-weekly-ads/')
 info = []
 
-# Find the store
+# Search by zipcode
 browser.switch_to.frame("shopLocalPlatformFrame")
 element = browser.find_element_by_id("locationInput")
 element.send_keys("38637")
 sleep(0.2)  # It hung on me once for some reason, so just to be safe
 element.send_keys(Keys.ENTER)
 sleep(2)
-element = browser.find_elements_by_class_name("nuepselectstorebtns")[0]
+
+# Click on the specified result
+element = browser.find_elements_by_class_name("nuepselectstorebtns")[STORE]
 element.click()
 
 # Go to the current ad
@@ -49,6 +51,7 @@ for m in range(mapcount):
         areas = browser.find_elements_by_tag_name("map")[m].find_elements_by_tag_name("area")
         outside_label = areas[a].get_attribute("aria-label")
         print(f' Working on {outside_label}', end='')
+        # Click item picture to force a popup
         while True:
             print('.', end="")
             try:
@@ -56,7 +59,8 @@ for m in range(mapcount):
                 break
             except:
                 sleep(1)
-        sleep(2)
+
+        # Click on item details button in the popup
         while True:
             print(',', end="")
             try:
@@ -64,7 +68,8 @@ for m in range(mapcount):
                 break
             except:
                 sleep(1)
-        sleep(2)
+
+        # Scrape data
         while True:
             print('.', end="")
             try:
@@ -74,10 +79,11 @@ for m in range(mapcount):
                 sleep(1)
         print()
         sleep(1)
+
         # Check that the text is appropriate
-        t = text.split('\n')
-        if t[0] != outside_label:
-            raise ValueError(f'{t[0]} does not match {outside_label}.')
+        text = text.split('\n')
+        if text[0] != outside_label:
+            raise ValueError(f'Expected {outside_label}, but got {text[0]}.')
 
         # Close out of the popup if its there.
         for element in browser.find_elements_by_tag_name("div"):
@@ -86,15 +92,14 @@ for m in range(mapcount):
                 break
 
         # Parse out the price into dollar format
-        price = ''
-        for word in t[1].split(' '):
+        cost = ''
+        for word in text[1].split(' '):
             if '¢' in word:
-                price = '$0.' + word[:-1]
+                cost = '$0.' + word[:-1]
             elif '$' in word:
-                price = word + ('.00', '')['.' in word]
-        i = Item(t[0], price)
-        info.append(i)
-        print(f' - {i}')
+                cost = word + ('.00', '')['.' in word]
+        info.append(Item(text[0], cost))
+        print(info[-1])
         sleep(1)
 
     # Flip the page
