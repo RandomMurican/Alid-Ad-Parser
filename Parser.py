@@ -3,8 +3,10 @@ from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
+STREET = '7051 Sleep Hollow Drive'
+CITY = 'Southaven'
+STATE = 'MS'
 ZIPCODE = 38637
-STORE = 0
 
 
 class Item:
@@ -24,14 +26,21 @@ info = []
 # Search by zipcode
 browser.switch_to.frame("shopLocalPlatformFrame")
 element = browser.find_element_by_id("locationInput")
-element.send_keys("38637")
+element.send_keys(ZIPCODE)
 sleep(0.2)  # It hung on me once for some reason, so just to be safe
 element.send_keys(Keys.ENTER)
 sleep(2)
 
 # Click on the specified result
-element = browser.find_elements_by_class_name("nuepselectstorebtns")[STORE]
-element.click()
+found = False
+stores = browser.find_elements_by_class_name("nuepselectstorebtns")
+for store in stores:
+    if store.get_attribute("aria-label") == f'Select Aldi at {STREET} {CITY}, {STATE}':
+        store.click()
+        found = True
+        break
+if not found:
+    raise ValueError('Store not found.')
 
 # Go to the current ad
 for element in browser.find_elements_by_tag_name("div"):
